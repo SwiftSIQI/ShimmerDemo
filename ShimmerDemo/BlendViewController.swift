@@ -23,7 +23,7 @@ class BlendViewController: UIViewController {
             x: 0,
             y: contentView!.frame.maxY,
             width: UIScreen.main.bounds.width,
-            height: UIScreen.main.bounds.height - 650 - tabBarController!.tabBar.frame.size.height))
+            height: UIScreen.main.bounds.height - (UIScreen.main.bounds.height * 0.7) - tabBarController!.tabBar.frame.size.height))
         picker.layer.borderWidth = 5
         picker.layer.borderColor = UIColor.lightGray.cgColor
         view.addSubview(picker)
@@ -32,11 +32,9 @@ class BlendViewController: UIViewController {
     }
     
     func setupContent() {
-        contentView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 650));
+        contentView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: (UIScreen.main.bounds.height * 0.7)));
         contentView?.clipsToBounds = true
         view.addSubview(contentView!)
-        
-        // 组合遮罩
         let array = [100, 100+330, 100+330+330];
         for startY in array {
             self.createCell(fromY: startY)
@@ -88,45 +86,23 @@ class BlendViewController: UIViewController {
 }
 
 extension BlendViewController {
-    
+    // more details about ci image filter and blend mode
+    // please read this reference
+    // https://developer.apple.com/library/archive/documentation/GraphicsImaging/Reference/CoreImageFilterReference/index.html#//apple_ref/doc/uid/TP30000136-SW71
     var compositingFilterStrings:[String] {
-        return [
-            "normalBlendMode",
-            //
-            "darkenBlendMode",
-            "multiplyBlendMode",
-            "colorBurnBlendMode",
-            //
-            "lightenBlendMode",
-            "screenBlendMode",
-            "colorDodgeBlendMode",
-            //
-            "overlayBlendMode",
-            "softLightBlendMode",
-            "hardLightBlendMode",
-            //
-            "differenceBlendMode",
-            "exclusionBlendMode",
-            //
-            "hueBlendMode",
-            "saturationBlendMode",
-            "colorBlendMode",
-            "luminosityBlendMode",
-            ]
+
+        let filters = CIFilter.filterNames(inCategory: kCICategoryCompositeOperation)
+        return filters.map { String($0.dropFirst(2)).lowercaseFirstLetter() }
     }
     
     func startAnimationWith(filter string: String) {
-        
-        // 加一个图层移动
         let height = UIScreen.main.bounds.height
         let width = UIScreen.main.bounds.width
-
-        
         let gradientLayer = CAGradientLayer()
         gradientLayer.frame = CGRect(x: 0,
-                               y: 0,
-                               width: width,
-                               height: height)
+                                     y: 0,
+                                     width: width,
+                                     height: height)
         // 一条线滑动
         gradientLayer.colors = [
             UIColor.clear.cgColor,
@@ -137,14 +113,13 @@ extension BlendViewController {
         gradientLayer.locations = [0.0, 0.4,
                                    0.6, 1.00]
         view.layer.addSublayer(gradientLayer)
-        
         // 旋转角度
         let angle = -60 * CGFloat.pi / 180
         let rotationTransform = CATransform3DMakeRotation(angle, 0, 0, 1)
         gradientLayer.transform = rotationTransform
         // 放大图层
         gradientLayer.transform = CATransform3DConcat(gradientLayer.transform, CATransform3DMakeScale(5, 5, 0))
-        
+        // 添加动画
         let animation = CABasicAnimation(keyPath: "transform.translation.x")
         animation.duration = 2
         animation.autoreverses = false
@@ -158,9 +133,7 @@ extension BlendViewController {
     }
 }
 
-
 extension BlendViewController: UIPickerViewDataSource, UIPickerViewDelegate {
-    
     func setCompositeFilter(index: Int) {
         let filterString = compositingFilterStrings[index]
         print(filterString)
@@ -187,3 +160,12 @@ extension BlendViewController: UIPickerViewDataSource, UIPickerViewDelegate {
     }
 }
 
+extension String {
+    func lowercaseFirstLetter() -> String {
+        return  prefix(1).lowercased() + dropFirst()
+    }
+
+    mutating func lowercaseFirstLetter() {
+        self = self.lowercaseFirstLetter()
+    }
+}
